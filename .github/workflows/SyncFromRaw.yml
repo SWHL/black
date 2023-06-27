@@ -1,48 +1,67 @@
-name: Sync From Raw Repo
-on:
-  push:
-    branches:
-      - '**'
-  schedule:
-    - cron: '0 1 * * *'  # 9点运行 1 + 8
+name: Sync Fork Upstream
 
-env:
-  REPO_SSH: git@github.com:SWHL/black.git
-  CLONE_URL: ${{ github.event.repository.clone_url }}
-  USER_NAME: SWHL
-  USER_EMAIL: liekkaskono@163.com
-  SUBMMIT_BRANCH: main
+on:
+  schedule:
+    - cron: '0 1 * * *' # every day 8am
+  workflow_dispatch: # on button click
 
 jobs:
-  repo-sync:
+  sync:
     runs-on: ubuntu-latest
     steps:
-      - name: Set SSH Environment
+      - uses: AbdulmelikKalkan/sync-fork-upstream@v1.3
         env:
-          DEPLOY_KEYS: ${{ secrets.DEPLOY_KEYS }}
-        run: |
-          mkdir -p ~/.ssh/
-          echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
-          git config --global user.name $USER_NAME
-          git config --global user.email $USER_EMAIL
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+        with:
+          owner: psf
+          repo: black
+          branch: main
 
-      - name: Sync from raw repo
-        run: |
-          git clone $REPO_SSH
-          cd black
-          git config pull.rebase true
-          git remote add upstream git@github.com:psf/black.git
-          git fetch upstream main
-          git checkout -b local_upstream upstream/main
-          git pull upstream main
-          git status
-          git rebase -q main
-          git checkout main
+# name: Sync From Raw Repo
+# on:
+#   push:
+#     branches:
+#       - '**'
+#   schedule:
+#     - cron: '0 1 * * *'  # 9点运行 1 + 8
 
-          git merge local_upstream
-          git status
-          git push
-        #   git commit -m 'Actions auto update' || echo "nothing to commit"
-        #   git push -f origin ${SUBMMIT_BRANCH}
+# env:
+#   REPO_SSH: git@github.com:SWHL/black.git
+#   CLONE_URL: ${{ github.event.repository.clone_url }}
+#   USER_NAME: SWHL
+#   USER_EMAIL: liekkaskono@163.com
+#   SUBMMIT_BRANCH: main
+
+# jobs:
+#   repo-sync:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - name: Set SSH Environment
+#         env:
+#           DEPLOY_KEYS: ${{ secrets.DEPLOY_KEYS }}
+#         run: |
+#           mkdir -p ~/.ssh/
+#           echo "$DEPLOY_KEYS" > ~/.ssh/id_rsa
+#           chmod 600 ~/.ssh/id_rsa
+#           chmod 700 ~/.ssh && chmod 600 ~/.ssh/*
+#           git config --global user.name $USER_NAME
+#           git config --global user.email $USER_EMAIL
+
+#       - name: Sync from raw repo
+#         run: |
+#           git clone $REPO_SSH
+#           cd black
+#           git config pull.rebase true
+#           git remote add upstream git@github.com:psf/black.git
+#           git fetch upstream main
+#           git checkout -b local_upstream upstream/main
+#           git pull upstream main
+#           git status
+#           git rebase -q main
+#           git checkout main
+
+#           git merge local_upstream
+#           git status
+#           git push
+#         #   git commit -m 'Actions auto update' || echo "nothing to commit"
+#         #   git push -f origin ${SUBMMIT_BRANCH}
