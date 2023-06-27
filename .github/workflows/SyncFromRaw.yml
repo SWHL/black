@@ -1,6 +1,9 @@
 name: Sync Fork Upstream
 
 on:
+  push:
+    branches:
+      - '**'
   schedule:
     - cron: '0 1 * * *' # every day 8am
   workflow_dispatch: # on button click
