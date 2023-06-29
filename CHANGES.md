@@ -12,6 +12,8 @@
 
 - Fix a bug where an illegal trailing comma was added to return type annotations using
   PEP 604 unions (#3735)
+- Fix a bug where multi-line open parenthesis magic comment like `type: ignore` were not
+  correctly parsed (#3740)
 
 ### Preview style
 
@@ -73,6 +75,9 @@
 
 <!-- Major changes to documentation and policies. Small docs changes
      don't need a changelog entry. -->
+
+- Updated the _classes_ and _exceptions_ documentation in Developer reference to match
+  the latest ccode base. (#3755)
 
 ## 23.3.0
 
