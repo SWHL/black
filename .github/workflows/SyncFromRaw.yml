@@ -30,7 +30,7 @@ jobs:
         upstream_sync_branch: main
         upstream_sync_repo: psf/black
 
-        test_mode: true
+        test_mode: false
       
     - name: New commits found
       if: steps.sync.outputs.has_new_commits == 'true'
