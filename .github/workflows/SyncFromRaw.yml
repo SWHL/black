@@ -5,7 +5,7 @@ on:
     branches:
       - '**'
   schedule:
-    - cron: '0 1 * * *'  # 9点运行 1 + 8
+    - cron: '0 0 * * *'  # 8点运行 1 + 8
 
   workflow_dispatch:  # click the button on Github repo!
 
