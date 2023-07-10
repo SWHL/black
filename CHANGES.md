@@ -15,8 +15,12 @@
 
 - Fix a bug where an illegal trailing comma was added to return type annotations using
   PEP 604 unions (#3735)
+- Fix several bugs and crashes where comments in stub files were removed or mishandled
+  under some circumstances. (#3745)
 - Fix a bug where multi-line open parenthesis magic comment like `type: ignore` were not
   correctly parsed (#3740)
+- Fix error in AST validation when Black removes trailing whitespace in a type comment
+  (#3773)
 
 ### Preview style
 
@@ -43,6 +47,7 @@
 <!-- Changes to how Black is packaged, such as dependency requirements -->
 
 - Upgrade mypyc from 0.991 to 1.3 (#3697)
+- Remove patching of Click that mitigated errors on Python 3.6 with `LANG=C` (#3768)
 
 ### Parser
 
@@ -54,6 +59,7 @@
 
 <!-- Changes that improve Black's performance. -->
 
+- Speed up _Black_ significantly when the cache is full (#3751)
 - Avoid importing `IPython` in a case where we wouldn't need it (#3748)
 
 ### Output
@@ -82,6 +88,9 @@
   deprecation announcement (#3757)
 
 ### Documentation
+
+- Add a CITATION.cff file to the root of the repository, containing metadata on how to
+  cite this software (#3723)
 
 <!-- Major changes to documentation and policies. Small docs changes
      don't need a changelog entry. -->
