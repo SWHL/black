@@ -20,6 +20,8 @@
 
 <!-- Changes to how Black can be configured -->
 
+- Black now applies exclusion and ignore logic before resolving symlinks (#3846)
+
 ### Packaging
 
 <!-- Changes to how Black is packaged, such as dependency requirements -->
@@ -42,6 +44,8 @@
 ### _Blackd_
 
 <!-- Changes to blackd -->
+
+- Fix an issue in `blackd` with single character input (#3558)
 
 ### Integrations
 
