@@ -152,11 +152,6 @@ class LineGenerator(Visitor[Line]):
 
             if any_open_brackets:
                 node.prefix = ""
-            if self.mode.string_normalization and node.type == token.STRING:
-                node.value = normalize_string_prefix(node.value)
-                node.value = normalize_string_quotes(node.value)
-            if node.type == token.NUMBER:
-                normalize_numeric_literal(node)
             if node.type not in WHITESPACE:
                 self.current_line.append(node)
         yield from super().visit_default(node)
@@ -420,12 +415,11 @@ class LineGenerator(Visitor[Line]):
             # indentation of those changes the AST representation of the code.
             if self.mode.string_normalization:
                 docstring = normalize_string_prefix(leaf.value)
-                # visit_default() does handle string normalization for us, but
-                # since this method acts differently depending on quote style (ex.
+                # We handle string normalization at the end of this method, but since
+                # what we do right now acts differently depending on quote style (ex.
                 # see padding logic below), there's a possibility for unstable
-                # formatting as visit_default() is called *after*. To avoid a
-                # situation where this function formats a docstring differently on
-                # the second pass, normalize it early.
+                # formatting. To avoid a situation where this function formats a
+                # docstring differently on the second pass, normalize it early.
                 docstring = normalize_string_quotes(docstring)
             else:
                 docstring = leaf.value
@@ -499,7 +493,53 @@ class LineGenerator(Visitor[Line]):
             else:
                 leaf.value = prefix + quote + docstring + quote
 
+        if self.mode.string_normalization and leaf.type == token.STRING:
+            leaf.value = normalize_string_prefix(leaf.value)
+            leaf.value = normalize_string_quotes(leaf.value)
         yield from self.visit_default(leaf)
+
+    def visit_NUMBER(self, leaf: Leaf) -> Iterator[Line]:
+        normalize_numeric_literal(leaf)
+        yield from self.visit_default(leaf)
+
+    def visit_fstring(self, node: Node) -> Iterator[Line]:
+        # currently we don't want to format and split f-strings at all.
+        string_leaf = _fstring_to_string(node)
+        node.replace(string_leaf)
+        yield from self.visit_STRING(string_leaf)
+
+        # TODO: Uncomment Implementation to format f-string children
+        # fstring_start = node.children[0]
+        # fstring_end = node.children[-1]
+        # assert isinstance(fstring_start, Leaf)
+        # assert isinstance(fstring_end, Leaf)
+
+        # quote_char = fstring_end.value[0]
+        # quote_idx = fstring_start.value.index(quote_char)
+        # prefix, quote = (
+        #     fstring_start.value[:quote_idx],
+        #     fstring_start.value[quote_idx:]
+        # )
+
+        # if not is_docstring(node, self.mode):
+        #     prefix = normalize_string_prefix(prefix)
+
+        # assert quote == fstring_end.value
+
+        # is_raw_fstring = "r" in prefix or "R" in prefix
+        # middles = [
+        #     leaf
+        #     for leaf in node.leaves()
+        #     if leaf.type == token.FSTRING_MIDDLE
+        # ]
+
+        # if self.mode.string_normalization:
+        #     middles, quote = normalize_fstring_quotes(quote, middles, is_raw_fstring)
+
+        # fstring_start.value = prefix + quote
+        # fstring_end.value = quote
+
+        # yield from self.visit_default(node)
 
     def __post_init__(self) -> None:
         """You are in a twisty little maze of passages."""
@@ -532,6 +572,12 @@ class LineGenerator(Visitor[Line]):
         self.visit_case_block = self.visit_match_case
         if Preview.remove_redundant_guard_parens in self.mode:
             self.visit_guard = partial(v, keywords=Ø, parens={"if"})
+
+
+def _fstring_to_string(node: Node) -> Leaf:
+    """Converts an fstring node back to a string node."""
+    string_without_prefix = str(node)[len(node.prefix) :]
+    return Leaf(token.STRING, string_without_prefix, prefix=node.prefix)
 
 
 def _hugging_power_ops_line_to_string(
