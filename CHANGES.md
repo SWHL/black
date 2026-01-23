@@ -17,6 +17,10 @@
 
 <!-- Changes that affect Black's preview style -->
 
+- Fix `string_processing` crashing on unassigned long string literals with trailing
+  commas (one-item tuples) (#4929)
+- Simplify implementation of the power operator "hugging" logic (#4918)
+
 ### Configuration
 
 <!-- Changes to how Black can be configured -->
@@ -124,6 +128,8 @@ directories.
 - Fix crash when multiple `# fmt: skip` comments are used in a multi-part if-clause, on
   string literals, or on dictionary entries with long lines (#4872)
 - Fix possible crash when `fmt: ` directives aren't on the top level (#4856)
+- Preserve parentheses when `# type: ignore` comments would be merged with other
+  comments on the same line, preventing AST equivalence failures (#4888)
 
 ### Preview style
 
