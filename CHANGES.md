@@ -13,6 +13,8 @@
 
 <!-- Changes that affect Black's stable style -->
 
+- Don't double-decode input, causing non-UTF-8 files to be corrupted (#4964)
+
 ### Preview style
 
 <!-- Changes that affect Black's preview style -->
@@ -28,6 +30,9 @@
 ### Packaging
 
 <!-- Changes to how Black is packaged, such as dependency requirements -->
+
+- Fix shutdown errors in PyInstaller builds on macOS by disabling multiprocessing in
+  frozen environments (#4930)
 
 ### Parser
 
