@@ -20,6 +20,8 @@
 
 <!-- Changes that affect Black's preview style -->
 
+- Prevent string merger from creating unsplittable long lines when a pragma comment
+  (e.g. `# type: ignore`) follows the closing bracket (#5096)
 - Improve heuristics around whether blank lines should appear before, within and after
   groups of same-name decorated functions (such as `@overload` groups) in `.pyi` stub
   files (#5021)
@@ -51,6 +53,9 @@
 ### Integrations
 
 <!-- For example, Docker, GitHub Actions, pre-commit, editors -->
+
+- Added documentation for doctest formatting tools and updated the integrations index to
+  match (#4916)
 
 ### Documentation
 
