@@ -53,6 +53,10 @@
 
 <!-- Changes that improve Black's performance. -->
 
+- Improve performance on strings containing many consecutive backslashes (#5163)
+- Improve performance when merging implicitly concatenated f-strings whose expressions
+  contain long string literals (#5165)
+
 ### Output
 
 <!-- Changes to Black's terminal output and error messages -->
