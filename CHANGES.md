@@ -23,6 +23,10 @@
   lengths (#5147)
 - Fix multiline docstring indentation when leading tabs are used inside indented
   docstrings (#5148)
+- Respect `# fmt: skip` on a line that opens a bracket (e.g.
+  `from x import (  # fmt: skip`) when a standalone comment is among the bracket's
+  contents: the whole statement is now preserved instead of being reformatted (and
+  previously crashing) (#5161)
 
 ### Preview style
 
@@ -63,6 +67,9 @@
   contain long string literals (#5165)
 - Improve performance on files with many `# fmt: skip`/`# fmt: off` comments by no
   longer re-walking the whole tree from the root for every directive (#5169)
+- Improve performance on deeply nested parenthesised expressions by no longer
+  re-scanning the whole atom for every nesting level in `max_delimiter_priority_in_atom`
+  (#5171)
 
 ### Output
 
