@@ -51,6 +51,9 @@ class Line:
     inside_brackets: bool = False
     should_split_rhs: bool = False
     magic_trailing_comma: Leaf | None = None
+    _complex_subscript_cache: dict[LeafID, bool] = field(
+        default_factory=dict, repr=False
+    )
 
     def append(
         self, leaf: Leaf, preformatted: bool = False, track_bracket: bool = False
@@ -443,9 +446,22 @@ class Line:
             if subscript_start.type == syms.subscriptlist:
                 subscript_start = child_towards(subscript_start, leaf)
 
-        return subscript_start is not None and any(
-            n.type in TEST_DESCENDANTS for n in subscript_start.pre_order()
-        )
+        if subscript_start is None:
+            return False
+
+        # The pre_order walk only depends on subscript_start, which is stable
+        # while a line is built, so cache it per node. Without this, appending
+        # every leaf of a large bracketed expression that holds no TEST_DESCENDANTS
+        # node (e.g. a long run of implicitly concatenated strings) re-walks the
+        # whole subtree each time, which is quadratic.
+        key = id(subscript_start)
+        cached = self._complex_subscript_cache.get(key)
+        if cached is None:
+            cached = any(
+                n.type in TEST_DESCENDANTS for n in subscript_start.pre_order()
+            )
+            self._complex_subscript_cache[key] = cached
+        return cached
 
     def enumerate_with_length(
         self, is_reversed: bool = False
@@ -1484,6 +1500,15 @@ def can_omit_invisible_parens(
     are too long.
     """
     line = rhs.body
+
+    # Don't omit optional parens when the opening paren carries an inline comment.
+    # Omitting them re-parents the comment onto a different leaf after the next
+    # parse, which can make the RHS splitter choose a different shape on each
+    # pass (unstable formatting / "different code on the second pass"). See
+    # issues #3701, #3706, and #4384.
+    if rhs.opening_bracket.type == token.LPAR and not rhs.opening_bracket.value:
+        if rhs.head.comments.get(id(rhs.opening_bracket)):
+            return False
 
     # We can't omit parens if doing so would result in a type: ignore comment
     # sharing a line with other comments, as that breaks type: ignore parsing.
