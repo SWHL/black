@@ -17,6 +17,10 @@
 
 <!-- Changes that affect Black's stable style -->
 
+- Fix dropping the required trailing comma from a single-element tuple used as a lambda
+  parameter default under `--skip-magic-trailing-comma` when a standalone comment forces
+  the tuple across multiple lines; removing the comma turned the tuple into a bare
+  expression and failed Black's AST safety check (#5246)
 - Fix unstable formatting when an inline comment sits on optional parentheses (for
   example a parenthesized assert message or assignment RHS) (#5241)
 - Fix crash when a standalone comment sits between tokens of a comprehension or lambda
@@ -39,6 +43,8 @@
 
 <!-- Changes that affect Black's preview style -->
 
+- Preserve two blank lines before a top-level class starting inside a `# fmt: off` block
+  after an import (#5238)
 - Fix unnecessary parentheses around short RHS expressions in indexed assignments like
   `x[key] = expr` (#5095)
 - Parenthesize tuple expressions in `yield` statements for consistency with function
@@ -593,8 +599,8 @@ The following changes were not in any previous release:
 
 ### Preview style
 
-- Fix type annotation spacing between * and more complex type variable tuple (i.e. `def
-  fn(*args: *tuple[*Ts, T]) -> None: pass`) (#4440)
+- Fix type annotation spacing between * and more complex type variable tuple (i.e.
+  `def fn(*args: *tuple[*Ts, T]) -> None: pass`) (#4440)
 
 ### Caching
 
