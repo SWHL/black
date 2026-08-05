@@ -109,11 +109,7 @@ def hug_power_op(
     new_line = line.clone()
     should_hug = False
     for idx, leaf in enumerate(line.leaves):
-        new_leaf = leaf.clone()
-        if should_hug:
-            new_leaf.prefix = ""
-            should_hug = False
-
+        hug_this_leaf = should_hug
         should_hug = (
             (0 < idx < len(line.leaves) - 1)
             and leaf.type == token.DOUBLESTAR
@@ -121,8 +117,18 @@ def hug_power_op(
             and line.leaves[idx - 1].value != "lambda"
             and is_simple_operand(idx + 1, kind=1)
         )
-        if should_hug:
+
+        if hug_this_leaf or should_hug:
+            new_leaf = leaf.clone()
             new_leaf.prefix = ""
+        else:
+            # Only the operands around a hugged `**` need a copy. Reuse the leaf
+            # otherwise: a clone has no parent, and the trailing-comma guards in
+            # `Line.append` read the tree to tell a syntactically required comma
+            # (a one-tuple, or a one-element subscript like `a[x,]`) from a magic
+            # one. Without a parent they can't, so the comma was being dropped
+            # under --skip-magic-trailing-comma.
+            new_leaf = leaf
 
         # We have to be careful to make a new line properly:
         # - bracket related metadata must be maintained (handled by Line.append)
@@ -1979,7 +1985,7 @@ class StringParenWrapper(BaseStringSplitter, CustomSplitMapMixin):
         * The line is a dictionary key assignment where some valid key is being
           assigned the value of some string.
           OR
-        * The line is an lambda expression and the value is a string.
+        * The line is a lambda expression and the value is a string.
           OR
         * The line starts with an "atom" string that prefers to be wrapped in
           parens. It's preferred to be wrapped when it's is an immediate child of
@@ -2507,7 +2513,7 @@ class StringParser:
             if (current_state, next_token) in self._goto:
                 self._state = self._goto[current_state, next_token]
             else:
-                # Otherwise, we check if a the current state was assigned a
+                # Otherwise, we check if the current state was assigned a
                 # default.
                 if (current_state, self.DEFAULT_TOKEN) in self._goto:
                     self._state = self._goto[current_state, self.DEFAULT_TOKEN]
