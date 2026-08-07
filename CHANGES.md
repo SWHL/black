@@ -181,6 +181,8 @@
 
 <!-- Changes to Black's terminal output and error messages -->
 
+- Report parser failures using editor-friendly `path:line:column` locations (#5237)
+
 ### _Blackd_
 
 <!-- Changes to blackd -->
@@ -193,6 +195,9 @@
 
 <!-- Major changes to documentation and policies. Small docs changes
      don't need a changelog entry. -->
+
+- Document `vim-python-pep8-indent`, which provides an `indentexpr` for Black-style
+  insert-mode indentation (#5288)
 
 ## Version 26.5.1
 
