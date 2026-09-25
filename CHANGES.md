@@ -57,6 +57,8 @@
   operator (#5272)
 - Fix crash when a standalone comment sits between tokens of a comprehension or lambda
   (#5144)
+- Preserve paired `# fmt: skip` comments on parenthesized compound statement headers
+  (#5401)
 - Fix inline comments being dropped on the lines produced by that forced split, so a
   trailing `# comment` or `# type: ignore` on a bracket inside such a comprehension is
   kept instead of silently removed (#5330)
@@ -73,6 +75,8 @@
   `from x import (  # fmt: skip`) when a standalone comment is among the bracket's
   contents: the whole statement is now preserved instead of being reformatted (and
   previously crashing) (#5161)
+- Fix an AST safety error when separate `type: ignore` comments in a parenthesized
+  attribute chain were merged onto one physical line (#5297)
 - Preserve comments and blank lines outside requested ranges when formatting with
   `--line-ranges` (#5175)
 - Fix crash when `# fmt: skip` is used on one-line `async def`, `async with`, and
@@ -82,6 +86,12 @@
 
 <!-- Changes that affect Black's preview style -->
 
+- Split long stringified return annotations even when the function has parameters
+  (#5427)
+- Fix crash in stub files when `# fmt: skip` is placed on a function in a group of
+  same-name decorated functions, such as `@overload`s or a property setter (#5430)
+- Remove redundant parentheses around individual variables in unpacking targets (for
+  example `for (x), (y) in points:` becomes `for x, y in points:`) (#5416)
 - Normalize uppercase `T` prefixes on t-strings to lowercase under `--preview` (#5425)
 - Remove redundant parentheses around generator expressions (#5304, #5369)
 - Preserve two blank lines before a top-level class starting inside a `# fmt: off` block
@@ -107,11 +117,16 @@
 - Don't hug brackets when doing so would join two `type: ignore` comments onto one line.
   The AST records `type: ignore` per line, so merging them dropped a `TypeIgnore` entry
   and Black failed its own equivalence check (#5271)
+- Fix a crash when `# type: ignore` is lost during formatting of a long parenthesized
+  string (#5329)
 
 ### Configuration
 
 <!-- Changes to how Black can be configured -->
 
+- Fall back to the default configuration, with a warning, when the given sources share
+  no common project root (for example, they are on different drives on Windows) instead
+  of crashing (#5386)
 - Fix `find_project_root` returning a stale cached result when `--code` is used from
   different working directories in the same process. The CWD fallback (used when no
   `srcs` are given) is now resolved before the `lru_cache` key is computed, so each
@@ -217,6 +232,9 @@
 
 <!-- Changes to blackd -->
 
+- Return HTTP 400 instead of 500 when the `X-Python-Variant` header is empty or has an
+  empty entry, such as a trailing comma (#5428)
+
 ### Integrations
 
 <!-- For example, Docker, GitHub Actions, pre-commit, editors -->
@@ -231,6 +249,7 @@
 
 - Document `vim-python-pep8-indent`, which provides an `indentexpr` for Black-style
   insert-mode indentation (#5288)
+- Fix Git commands for Vundle in editor integration documentation (#5398)
 
 ## Version 26.5.1
 

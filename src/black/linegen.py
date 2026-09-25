@@ -705,6 +705,13 @@ class LineGenerator(Visitor[Line]):
         # yield from self.visit_default(node)
 
     def visit_comp_for(self, node: Node) -> Iterator[Line]:
+        if (
+            Preview.remove_redundant_unpacking_parentheses in self.mode
+            and len(node.children) > 1
+        ):
+            _normalize_unpacking_targets(
+                node.children[1], mode=self.mode, features=self.features
+            )
         if Preview.wrap_comprehension_in in self.mode:
             normalize_invisible_parens(
                 node, parens_after={"in"}, mode=self.mode, features=self.features
@@ -825,6 +832,7 @@ def transform_line(
                     string_paren_strip,
                     string_split,
                     delimiter_split,
+                    type_ignore_comment_split,
                     standalone_comment_split,
                     string_paren_wrap,
                     right_hand_split_with_omits,
@@ -841,6 +849,7 @@ def transform_line(
             if line.inside_brackets:
                 transformers = [
                     delimiter_split,
+                    type_ignore_comment_split,
                     standalone_comment_split,
                     right_hand_split_with_omits,
                 ]
@@ -900,9 +909,14 @@ def should_split_funcdef_with_rhs(line: Line, mode: Mode) -> bool:
             track_bracket=id(leaf) in leaves_to_track,
         )
 
-    # we could also return true if the line is too long, and the return type is longer
-    # than the param list. Or if `should_split_rhs` returns True.
-    return result.magic_trailing_comma is not None
+    first_visible_return_leaf = next(
+        (leaf for leaf in return_type_leaves if leaf.value), None
+    )
+    return result.magic_trailing_comma is not None or (
+        first_visible_return_leaf is not None
+        and first_visible_return_leaf.type == token.STRING
+        and not is_line_short_enough(result, mode=mode)
+    )
 
 
 class _BracketSplitComponent(Enum):
@@ -1620,6 +1634,34 @@ def standalone_comment_split(
         yield current_line
 
 
+@dont_increase_indentation
+def type_ignore_comment_split(
+    line: Line, features: Collection[Feature], mode: Mode
+) -> Iterator[Line]:
+    """Keep multiple type ignores on their original physical lines."""
+    if not line.contains_multiple_type_ignores_at_current_depth() or not any(
+        leaf.type == token.DOT for leaf in line.leaves
+    ):
+        raise CannotSplit("Line does not have multiple type ignore comments")
+
+    current_line = Line(
+        mode=line.mode, depth=line.depth, inside_brackets=line.inside_brackets
+    )
+    for leaf in line.leaves:
+        current_line.append(leaf, preformatted=True)
+        comments = line.comments_after(leaf)
+        for comment in comments:
+            current_line.append(comment, preformatted=True)
+        if any(is_type_ignore_comment(comment, mode=mode) for comment in comments):
+            yield current_line
+            current_line = Line(
+                mode=line.mode, depth=line.depth, inside_brackets=line.inside_brackets
+            )
+
+    if current_line:
+        yield current_line
+
+
 def _force_standalone_comment_split(line: Line) -> Iterator[Line]:
     """Last-resort split at every standalone-comment boundary."""
     current_line = Line(
@@ -1679,6 +1721,38 @@ def _has_redundant_generator_parentheses(node: LN) -> bool:
     return is_generator(middle) or _has_redundant_generator_parentheses(middle)
 
 
+def _normalize_unpacking_targets(
+    node: LN,
+    mode: Mode,
+    features: Collection[Feature],
+) -> None:
+    """Remove redundant parentheses from individual elements in unpacking targets."""
+    if not isinstance(node, Node):
+        return
+
+    if node.type in (
+        syms.exprlist,
+        syms.testlist_star_expr,
+        syms.testlist_gexp,
+        syms.testlist,
+        syms.listmaker,
+        syms.star_expr,
+    ):
+        for child in node.children:
+            if child.type == syms.atom and not _is_atom_multiline(child):
+                maybe_make_parens_invisible_in_atom(
+                    child,
+                    parent=node,
+                    mode=mode,
+                    features=features,
+                )
+            _normalize_unpacking_targets(child, mode=mode, features=features)
+    elif node.type == syms.atom:
+        for child in node.children:
+            if isinstance(child, Node):
+                _normalize_unpacking_targets(child, mode=mode, features=features)
+
+
 def normalize_invisible_parens(
     node: Node, parens_after: set[str], *, mode: Mode, features: Collection[Feature]
 ) -> None:
@@ -1694,6 +1768,34 @@ def normalize_invisible_parens(
         if contains_fmt_directive(pc.value, FMT_OFF):
             # This `node` has a prefix with `# fmt: off`, don't mess with parens.
             return
+
+    if Preview.remove_redundant_unpacking_parentheses in mode:
+        if node.type in (syms.for_stmt, syms.comp_for, syms.old_comp_for):
+            if len(node.children) > 1:
+                _normalize_unpacking_targets(
+                    node.children[1], mode=mode, features=features
+                )
+        elif node.type == syms.expr_stmt:
+            equal_indices = [
+                i for i, child in enumerate(node.children) if child.type == token.EQUAL
+            ]
+            if equal_indices:
+                for child in node.children[: equal_indices[-1]]:
+                    if child.type != token.EQUAL:
+                        _normalize_unpacking_targets(
+                            child, mode=mode, features=features
+                        )
+        elif node.type == syms.del_stmt:
+            if len(node.children) > 1:
+                _normalize_unpacking_targets(
+                    node.children[1], mode=mode, features=features
+                )
+        elif node.type == syms.with_stmt:
+            for child in node.children:
+                if child.type == syms.asexpr_test and len(child.children) > 2:
+                    _normalize_unpacking_targets(
+                        child.children[2], mode=mode, features=features
+                    )
 
     # The multiple context managers grammar has a different pattern, thus this is
     # separate from the for-loop below. This possibly wraps them in invisible parens,
