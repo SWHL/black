@@ -85,15 +85,25 @@
   `--line-ranges` (#5175)
 - Fix crash when `# fmt: skip` is used on one-line `async def`, `async with`, and
   `async for` statements containing a semicolon (#5311)
+- Fix changing the value of a docstring that contains a form feed or another character
+  that is not a line break for the Python parser. `Black` split the docstring on it and
+  reindented the lines after it, so the character became a newline (#5461)
 
 ### Preview style
 
+- Add missing blank lines after classes whose last method has an ellipsis body (#5439)
+
 <!-- Changes that affect Black's preview style -->
 
+- Preserve leaf line numbers in `append_leaves` so multi-line expressions with merged
+  strings and trailing `# type: ignore` comments are not treated as single-line
+  unsplittable expressions (#5466)
 - Split only the brackets holding a magic trailing comma when more trailers follow them,
   so `[1,][2](3)` no longer also splits inside `[2]` (#5448)
 - Keep dictionary keys containing operators together on one line when the value can be
   wrapped onto a new line (#5435)
+- Fix `string_processing` duplicating an inline comment when it strips the parentheses
+  around a string or merges a backslash-continued string on the same line (#5449)
 - Split long stringified return annotations even when the function has parameters
   (#5427)
 - Fix crash in stub files when `# fmt: skip` is placed on a function in a group of
@@ -127,11 +137,16 @@
   and Black failed its own equivalence check (#5271)
 - Fix a crash when `# type: ignore` is lost during formatting of a long parenthesized
   string (#5329)
+- Fix `string_processing` producing invalid code by wrapping only the first part of an
+  implicitly concatenated string it cannot merge (such as `r"..." r"..."`) in
+  parentheses. The whole concatenation is now wrapped instead (#5434)
 
 ### Configuration
 
 <!-- Changes to how Black can be configured -->
 
+- Fix `--force-exclude` not excluding files whose path contains `..`, such as
+  `black ../generated/file.py` run from a subdirectory (#5471)
 - Fall back to the default configuration, with a warning, when the given sources share
   no common project root (for example, they are on different drives on Windows) instead
   of crashing (#5386)
@@ -155,6 +170,9 @@
 
 - Reduce the size of Linux standalone binaries by stripping debug symbols during the
   PyInstaller release build (#5223)
+- Black is now released using GitHub
+  [Immutable Releases](https://docs.github.com/code-security/concepts/supply-chain-security/immutable-releases)
+  (#5296)
 
 ### Parser
 
@@ -164,6 +182,10 @@
 
 <!-- Changes that improve Black's performance. -->
 
+- Fix superlinear runtime growth with the number of input files by replacing the
+  `asyncio.wait(..., return_when=FIRST_COMPLETED)` busy loop in `schedule_formatting`
+  with per-task done callbacks, so completion bookkeeping costs O(1) per file instead of
+  O(n) (#5450)
 - Improve performance on strings containing many consecutive backslashes (#5163)
 - Improve performance when merging implicitly concatenated f-strings whose expressions
   contain long string literals (#5165)
@@ -256,6 +278,8 @@
 
 - Support PEP 440 version specifiers in `tool.black.required-version` for the GitHub
   Action (#5399)
+- Add outputs (`is_formatted`, `change_count`, `same_count`, `failure_count`) to GitHub
+  Action runs (#5408)
 
 ### Documentation
 
