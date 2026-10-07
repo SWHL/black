@@ -21,6 +21,8 @@
   re-indents that statement (#5484)
 - Fix `--line-ranges` crashing with an internal error when an unselected statement has a
   `# fmt: skip` comment on the last line before a closing bracket (#5477)
+- Prevent moving an encoding declaration (for example `# -*- coding: latin-1 -*-`) onto
+  the first two lines of a file (#5487)
 
 ### Preview style
 
@@ -32,6 +34,8 @@
   raw strings, which changed their value (#5482)
 - Avoid adding unnecessary parentheses around unbreakable right-hand side expressions in
   assignments (such as annotated assignments or subscript targets) (#5473)
+- Fix `wrap_long_dict_values_in_parens` dropping the parentheses around a right-hand
+  side that contains a dictionary, leaving a line over the length limit (#5492)
 
 ### Configuration
 
@@ -53,6 +57,9 @@
 ### Performance
 
 <!-- Changes that improve Black's performance. -->
+
+- Avoid quadratic runtime when splitting very long lines with many trailing bracket
+  pairs (such as consecutive subscripts) (#5475)
 
 ### Output
 
