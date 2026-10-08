@@ -572,7 +572,9 @@ class LineGenerator(Visitor[Line]):
                 # If docstring is one line, we don't put the closing quotes on a
                 # separate line because it looks ugly (#3320).
                 lines = docstring.splitlines()
-                last_line_length = len(lines[-1]) if docstring else 0
+                last_line_length = (
+                    len(lines[-1]) if docstring and not docstring.endswith("\n") else 0
+                )
 
                 # If adding closing quotes would cause the last line to exceed
                 # the maximum line length, and the closing quote is not
@@ -2603,7 +2605,14 @@ def run_transformer(
         # `transform(line)` potentially destroys the line's underlying node
         # structure), then we can't proceed. Doing so would cause the below
         # call to `append_leaves()` to fail.
-        or any(leaf.parent is None for leaf in line.leaves)
+        or any(
+            leaf.parent is None
+            for leaf in line.leaves
+            if (
+                Preview.parenthesize_expressions_with_comments not in mode
+                or leaf.type != STANDALONE_COMMENT
+            )
+        )
     ):
         return result
 
@@ -2613,6 +2622,13 @@ def run_transformer(
     second_opinion = run_transformer(
         line_copy, transform, mode, features_fop, line_str=line_str
     )
-    if all(is_line_short_enough(ln, mode=mode) for ln in second_opinion):
+    if all(
+        is_line_short_enough(ln, mode=mode)
+        for ln in second_opinion
+        if (
+            Preview.parenthesize_expressions_with_comments not in mode
+            or not ln.is_comment
+        )
+    ):
         result = second_opinion
     return result

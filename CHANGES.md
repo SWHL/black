@@ -23,6 +23,8 @@
   `# fmt: skip` comment on the last line before a closing bracket (#5477)
 - Prevent moving an encoding declaration (for example `# -*- coding: latin-1 -*-`) onto
   the first two lines of a file (#5487)
+- Fix adding an extra trailing blank line inside a multi-line module docstring when its
+  last line is near the line length limit (#5494)
 
 ### Preview style
 
@@ -34,6 +36,8 @@
   raw strings, which changed their value (#5482)
 - Avoid adding unnecessary parentheses around unbreakable right-hand side expressions in
   assignments (such as annotated assignments or subscript targets) (#5473)
+- Parenthesize expressions with parameter comments when they exceed the line length
+  under `--preview` (#5442)
 - Fix `wrap_long_dict_values_in_parens` dropping the parentheses around a right-hand
   side that contains a dictionary, leaving a line over the length limit (#5492)
 
