@@ -1426,6 +1426,23 @@ def _prefer_split_rhs_oop_over_rhs(
         # Unless the split is inside the key
         return any(leaf.type == token.COLON for leaf in rhs_oop.tail.leaves)
 
+    # Keep the optional parens when omitting them would make the assignment head
+    # overlong even though keeping them fits. If the omitted-paren head contains a
+    # closing bracket, the split machinery can still try an earlier split point;
+    # if it contains comments, the overflow is not caused by the code alone. Leave
+    # both cases to the existing heuristics. Standalone comments in the body force
+    # it onto separate lines, so the head cannot be shortened afterwards (#3925).
+    if (
+        len(rhs.head.leaves) >= 2
+        and rhs.head.leaves[-2].type == token.EQUAL
+        and rhs_oop.body.contains_standalone_comments()
+        and not rhs_oop.head.comments
+        and is_line_short_enough(rhs.head, mode=mode)
+        and not is_line_short_enough(rhs_oop.head, mode=mode)
+        and not any(leaf.type in CLOSING_BRACKETS for leaf in rhs_oop.head.leaves)
+    ):
+        return False
+
     # the split is right after `=`
     if not (len(rhs.head.leaves) >= 2 and rhs.head.leaves[-2].type == token.EQUAL):
         return True
@@ -1989,7 +2006,25 @@ def _continues_fmt_skip_line(line: Line, leaf: Leaf) -> bool:
         and _is_hidden_by_fmt_skip(leaf)
         and not leaf.value.startswith("#")
         and "\n" not in leaf.prefix
+        and not _starts_statement(leaf)
     )
+
+
+def _starts_statement(leaf: Leaf) -> bool:
+    """Is `leaf` the first leaf of a statement?
+
+    The newline before a statement isn't in its prefix. It can even be hidden with
+    the statement above, e.g. `foo(a  # fmt: skip` ... `)` followed by another one.
+    """
+    node: LN = leaf
+    while node.parent is not None and node.parent.type not in {
+        syms.file_input,
+        syms.suite,
+    }:
+        if node.prev_sibling is not None:
+            return False
+        node = node.parent
+    return node.parent is not None
 
 
 def _is_hidden_by_fmt_skip(leaf: Leaf) -> bool:
