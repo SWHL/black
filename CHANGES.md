@@ -9,6 +9,9 @@
 
 <!-- Include any especially major or disruptive changes here -->
 
+- Drop runtime support for Python 3.10 (#5616)
+- Build Python 3.15 wheels (#5616)
+
 ### Stable style
 
 <!-- Changes that affect Black's stable style -->
@@ -78,11 +81,15 @@
 - Fix IPython help syntax after an object (`obj?`), wildcard searches (`np.*load*?`) and
   pasted `>>>` prompts being rewritten in Jupyter notebooks. Cells with IPython syntax
   that can't be put back as written are now left unchanged (#5630)
+- Fix crash when `# fmt: skip` is on the closing bracket of a `# fmt: off` region that
+  ends in a comment (#5643)
 
 ### Preview style
 
 <!-- Changes that affect Black's preview style -->
 
+- Retain user-written parens around `in` clauses of comprehensions if they have
+  delimiters (#4881)
 - Fix crash when `# fmt: skip` is on the opening bracket of a collection used as a
   binary operand and the expression is split at a short line length (#5609)
 - Remove redundant parentheses around simple top-level expressions (#5516)
@@ -108,6 +115,8 @@
 - Fix the unstable `string_processing` feature crashing on strings in lists, tuples and
   sets when the line length is very small or the code is deeply nested, by not wrapping
   them in parentheses when the wrapped line would still be too long (#5521)
+- Correctly indent `# fmt: off` comments inside brackets, such as function calls, and
+  fix a crash when one comes right before a lone name, number or string (#5643)
 
 ### Configuration
 
@@ -153,6 +162,8 @@
 
 <!-- Changes to Blackd -->
 
+- Preserve non-ASCII source in the Python client when a custom `Content-Type` declares a
+  non-UTF-8 charset (#5645)
 - Return HTTP 400 for an unknown request charset or input that cannot be decoded using
   the requested charset, instead of HTTP 500 (#5519)
 - Keep the first line skipped with `X-Skip-Source-First-Line` inside the patch returned
