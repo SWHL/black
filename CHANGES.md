@@ -16,6 +16,8 @@
 
 <!-- Changes that affect Black's stable style -->
 
+- Fix `# fmt: skip` on the last line of a multi-line conditional expression in a
+  collection, like `a` ... `if c else d,  # fmt: skip`, producing invalid code (#5647)
 - Keep the optional parentheses around an assignment's right-hand side when removing
   them would produce a first line longer than the line length and the expression
   contains standalone comments (#5638)
@@ -117,6 +119,8 @@
   them in parentheses when the wrapped line would still be too long (#5521)
 - Correctly indent `# fmt: off` comments inside brackets, such as function calls, and
   fix a crash when one comes right before a lone name, number or string (#5643)
+- Remove redundant parentheses around a `yield` of a tuple, such as `(yield a, b)`
+  (#5646)
 
 ### Configuration
 
@@ -212,6 +216,9 @@ has been registered as `GHSA-cg8m-r9f2-5wm2`; a CVE identifier is pending.
   the first two lines of a file (#5487)
 - Fix adding an extra trailing blank line inside a multi-line module docstring when its
   last line is near the line length limit (#5494)
+- Preserve blank lines between imports and unselected statements when using
+  `--line-ranges`, and ensure a blank line is added between an unselected import and a
+  newly formatted statement (#5493, #5649)
 - Keep the parentheses around a walrus that is the only item in a set (for example
   `{(x := f())}`) when targeting Python 3.9 or older, since Python 3.8 and 3.9.0 can't
   parse it without them (#5502)
