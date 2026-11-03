@@ -85,6 +85,8 @@
   that can't be put back as written are now left unchanged (#5630)
 - Fix crash when `# fmt: skip` is on the closing bracket of a `# fmt: off` region that
   ends in a comment (#5643)
+- Fix crash when a `# fmt: off` inside brackets comes right before the trailing comma or
+  the rest of the last item (#5651)
 
 ### Preview style
 
@@ -126,6 +128,9 @@
 
 <!-- Changes to how Black can be configured -->
 
+- Stop disregarding leading blank lines, which shifted the lines selected by
+  `--line-ranges`, reported the wrong line number in parse errors, and removed form
+  feeds on the first line (#5650)
 - Enable the cache when using `--diff` to skip unmodified files and record unmodified
   files as well-formatted (#5499)
 - Respect `--skip-source-first-line` when formatting code passed through stdin (#5580)
